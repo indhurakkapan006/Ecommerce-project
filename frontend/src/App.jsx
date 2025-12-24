@@ -15,10 +15,8 @@ function Home() {
     }, [userId, navigate]);
 
     const fetchProducts = () => {
-        // --- SAFE FETCH WITH CHECK ---
         axios.get('https://shop-api-lmrj.onrender.com/products')
             .then(res => {
-                // Check if the response is actually an Array (List)
                 if (Array.isArray(res.data)) {
                     setProducts(res.data);
                 } else {
@@ -33,7 +31,7 @@ function Home() {
         axios.post('https://shop-api-lmrj.onrender.com/place-order', { user_id: userId, amount: price })
         .then(res => {
             if (res.data.Status === "Success") alert("Order Placed Successfully!");
-            else alert("Order Failed.");
+            else alert("Order Failed. Try logging out and registering a new account.");
         });
     };
 
@@ -67,7 +65,7 @@ function Home() {
                             <button className="btn-danger" onClick={() => handleDelete(p.id)} style={{width: 'auto'}}>Delete</button>
                         </div>
                     </div>
-                )) : <p>No products found or Server Error.</p>}
+                )) : <p>No products found. (Try adding one!)</p>}
             </div>
         </div>
     );
@@ -91,10 +89,10 @@ function AddProduct() {
             <div className="auth-form">
                 <h2>Add New Product</h2>
                 <form onSubmit={handleSubmit}>
-                    <input type="text" placeholder="Product Name" onChange={e => setValues({...values, name: e.target.value})} required />
-                    <textarea placeholder="Description" onChange={e => setValues({...values, description: e.target.value})} required rows="3" />
-                    <input type="number" placeholder="Price" onChange={e => setValues({...values, price: e.target.value})} required />
-                    <input type="text" placeholder="Image URL (optional)" onChange={e => setValues({...values, image_url: e.target.value})} />
+                    <input type="text" name="product-name" id="product-name" placeholder="Product Name" onChange={e => setValues({...values, name: e.target.value})} required />
+                    <textarea name="description" id="description" placeholder="Description" onChange={e => setValues({...values, description: e.target.value})} required rows="3" />
+                    <input type="number" name="price" id="price" placeholder="Price" onChange={e => setValues({...values, price: e.target.value})} required />
+                    <input type="text" name="image" id="image" placeholder="Image URL (optional)" onChange={e => setValues({...values, image_url: e.target.value})} />
                     <button type="submit" className="btn-success" style={{width:'100%'}}>Add Product</button>
                 </form>
             </div>
@@ -117,10 +115,9 @@ function Register() {
             <div className="auth-form">
                 <h2>Create Account</h2>
                 <form onSubmit={handleRegister}>
-                    {/* FIXED: Added 'name' and 'id' attributes here */}
-                    <input type="text" name="username" id="username" placeholder="Username" onChange={e => setValues({...values, username: e.target.value})} required />
-                    <input type="email" name="email" id="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
-                    <input type="password" name="password" id="password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
+                    <input type="text" name="username" id="username" autoComplete="username" placeholder="Username" onChange={e => setValues({...values, username: e.target.value})} required />
+                    <input type="email" name="email" id="email" autoComplete="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
+                    <input type="password" name="password" id="password" autoComplete="new-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
                     <button type="submit" className="btn-primary">Sign Up</button>
                 </form>
                 <p style={{marginTop:'15px', textAlign:'center'}}>Already have an account? <Link to="/login">Login</Link></p>
@@ -149,9 +146,8 @@ function Login() {
             <div className="auth-form">
                 <h2>Welcome Back</h2>
                 <form onSubmit={handleSubmit}>
-                    {/* FIXED: Added 'name' and 'id' attributes here */}
-                    <input type="email" name="login-email" id="login-email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
-                    <input type="password" name="login-password" id="login-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
+                    <input type="email" name="email" id="login-email" autoComplete="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
+                    <input type="password" name="password" id="login-password" autoComplete="current-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
                     <button type="submit" className="btn-primary">Login</button>
                 </form>
                 <p style={{marginTop:'15px', textAlign:'center'}}>New here? <Link to="/register">Register</Link></p>
@@ -183,7 +179,6 @@ function Profile() {
             if (Array.isArray(res.data)) {
                 setOrders(res.data);
             } else {
-                console.error("Backend Error (Orders):", res.data);
                 setOrders([]); 
             }
         });
@@ -219,8 +214,9 @@ function Profile() {
                     </div>
                 ) : (
                     <div>
-                        <input type="text" placeholder="Phone" value={editValues.phone} onChange={e => setEditValues({...editValues, phone: e.target.value})} />
-                        <textarea placeholder="Address" value={editValues.address} onChange={e => setEditValues({...editValues, address: e.target.value})} />
+                        {/* FIXED: Added name, id, and autocomplete for Profile fields */}
+                        <input type="tel" name="phone" id="phone" autoComplete="tel" placeholder="Phone" value={editValues.phone} onChange={e => setEditValues({...editValues, phone: e.target.value})} />
+                        <textarea name="address" id="address" autoComplete="street-address" placeholder="Address" value={editValues.address} onChange={e => setEditValues({...editValues, address: e.target.value})} />
                         <div style={{display:'flex', gap:'10px'}}>
                             <button onClick={handleSave} className="btn-success" style={{width:'auto'}}>Save Changes</button>
                             <button onClick={() => setIsEditing(false)} className="btn-outline">Cancel</button>
