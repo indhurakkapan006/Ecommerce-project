@@ -6,12 +6,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// DATABASE CONNECTION
+// Database Connection (Supports both Local and Cloud)
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'sriram@2004', // <--- MAKE SURE THIS IS YOUR PASSWORD
-    database: 'ecommerce_db'
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root', 
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'ecommerce_db',
+    port: process.env.DB_PORT || 3306,
+    ssl: { rejectUnauthorized: false } // Crucial for Aiven connection
 });
 
 db.connect(err => {
