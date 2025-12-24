@@ -15,14 +15,14 @@ function Home() {
     }, [userId, navigate]);
 
     const fetchProducts = () => {
-        axios.get('http://localhost:8081/products')
+        axios.get('https://ecommerce-project-wi9z.onrender.com/products')
             .then(res => setProducts(res.data))
             .catch(err => console.log(err));
     }
 
     const handleBuy = (price) => {
         if (!userId) { alert("Please Login to Buy!"); navigate('/login'); return; }
-        axios.post('http://localhost:8081/place-order', { user_id: userId, amount: price })
+        axios.post('https://ecommerce-project-wi9z.onrender.com/place-order', { user_id: userId, amount: price })
         .then(res => {
             if (res.data.Status === "Success") alert("Order Placed Successfully!");
             else alert("Order Failed.");
@@ -31,7 +31,7 @@ function Home() {
 
     const handleDelete = (id) => {
         if(window.confirm("Are you sure you want to delete this product?")) {
-            axios.delete('http://localhost:8081/delete-product/'+id)
+            axios.delete('https://ecommerce-project-wi9z.onrender.com/delete-product/'+id)
             .then(res => {
                 if(res.data.Status === "Success") { fetchProducts(); } 
                 else { alert("Error deleting product"); }
@@ -71,7 +71,7 @@ function AddProduct() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:8081/add-product', values)
+        axios.post('https://ecommerce-project-wi9z.onrender.com/add-product', values)
             .then(res => {
                 if(res.data.Status === "Success") { alert("Product Added!"); navigate('/'); } 
                 else { alert("Error adding product"); }
@@ -100,7 +100,7 @@ function Register() {
 
     const handleRegister = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:8081/register', values)
+        axios.post('https://ecommerce-project-wi9z.onrender.com/register', values)
             .then(res => { alert("Registered! Please Login."); navigate('/login'); });
     };
 
@@ -126,7 +126,7 @@ function Login() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:8081/login', values)
+        axios.post('https://ecommerce-project-wi9z.onrender.com/login', values)
             .then(res => {
                 if(res.data.Status === "Success") {
                     localStorage.setItem('userId', res.data.id || res.data.userId); 
@@ -164,17 +164,17 @@ function Profile() {
     }, []);
 
     const fetchData = () => {
-        axios.get('http://localhost:8081/user/'+userId).then(res => {
+        axios.get('https://ecommerce-project-wi9z.onrender.com/user/'+userId).then(res => {
             setUser(res.data);
             setEditValues({ phone: res.data.phone || '', address: res.data.address || '' });
         });
-        axios.get('http://localhost:8081/orders/'+userId).then(res => setOrders(res.data));
+        axios.get('https://ecommerce-project-wi9z.onrender.com/orders/'+userId).then(res => setOrders(res.data));
     }
 
     const handleLogout = () => { localStorage.clear(); navigate('/login'); }
 
     const handleSave = () => {
-        axios.put('http://localhost:8081/update-profile', { id: userId, phone: editValues.phone, address: editValues.address })
+        axios.put('https://ecommerce-project-wi9z.onrender.com/update-profile', { id: userId, phone: editValues.phone, address: editValues.address })
         .then(res => {
             if(res.data.Status === "Success") { alert("Profile Updated!"); setIsEditing(false); fetchData(); } 
             else alert("Update Failed");
