@@ -23,7 +23,6 @@ function Home() {
                     setProducts(res.data);
                 } else {
                     console.error("Backend Error (Products):", res.data);
-                    // Optional: setProducts([]) to keep the page working empty
                 }
             })
             .catch(err => console.log(err));
@@ -118,10 +117,10 @@ function Register() {
             <div className="auth-form">
                 <h2>Create Account</h2>
                 <form onSubmit={handleRegister}>
-                    {/* FIXED: Added name, id, and autoComplete */}
-                    <input type="text" name="username" id="username" autoComplete="username" placeholder="Username" onChange={e => setValues({...values, username: e.target.value})} required />
-                    <input type="email" name="email" id="email" autoComplete="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
-                    <input type="password" name="password" id="password" autoComplete="new-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
+                    {/* FIXED: Added 'name' and 'id' attributes here */}
+                    <input type="text" name="username" id="username" placeholder="Username" onChange={e => setValues({...values, username: e.target.value})} required />
+                    <input type="email" name="email" id="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
+                    <input type="password" name="password" id="password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
                     <button type="submit" className="btn-primary">Sign Up</button>
                 </form>
                 <p style={{marginTop:'15px', textAlign:'center'}}>Already have an account? <Link to="/login">Login</Link></p>
@@ -150,9 +149,9 @@ function Login() {
             <div className="auth-form">
                 <h2>Welcome Back</h2>
                 <form onSubmit={handleSubmit}>
-                    {/* FIXED: Added name, id, and autoComplete */}
-                    <input type="email" name="login-email" id="login-email" autoComplete="email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
-                    <input type="password" name="login-password" id="login-password" autoComplete="current-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
+                    {/* FIXED: Added 'name' and 'id' attributes here */}
+                    <input type="email" name="login-email" id="login-email" placeholder="Email" onChange={e => setValues({...values, email: e.target.value})} required />
+                    <input type="password" name="login-password" id="login-password" placeholder="Password" onChange={e => setValues({...values, password: e.target.value})} required />
                     <button type="submit" className="btn-primary">Login</button>
                 </form>
                 <p style={{marginTop:'15px', textAlign:'center'}}>New here? <Link to="/register">Register</Link></p>
@@ -180,13 +179,12 @@ function Profile() {
             setEditValues({ phone: res.data.phone || '', address: res.data.address || '' });
         });
         
-        // --- SAFE FETCH FOR ORDERS ---
         axios.get('https://shop-api-lmrj.onrender.com/orders/'+userId).then(res => {
             if (Array.isArray(res.data)) {
                 setOrders(res.data);
             } else {
                 console.error("Backend Error (Orders):", res.data);
-                setOrders([]); // Prevent crash
+                setOrders([]); 
             }
         });
     }
