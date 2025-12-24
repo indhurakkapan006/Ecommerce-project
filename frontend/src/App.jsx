@@ -15,8 +15,17 @@ function Home() {
     }, [userId, navigate]);
 
     const fetchProducts = () => {
+        // --- SAFE FETCH WITH CHECK ---
         axios.get('https://ecommerce-project-wi9z.onrender.com/products')
-            .then(res => setProducts(res.data))
+            .then(res => {
+                // Check if the response is actually an Array (List)
+                if (Array.isArray(res.data)) {
+                    setProducts(res.data);
+                } else {
+                    console.error("Backend Error (Products):", res.data);
+                    // Optional: setProducts([]) to keep the page working empty
+                }
+            })
             .catch(err => console.log(err));
     }
 
@@ -47,7 +56,7 @@ function Home() {
             </div>
             
             <div className="grid">
-                {products.map(p => (
+                {products.length > 0 ? products.map(p => (
                     <div key={p.id} className="card">
                         <div>
                             <h3>{p.name}</h3>
@@ -59,7 +68,7 @@ function Home() {
                             <button className="btn-danger" onClick={() => handleDelete(p.id)} style={{width: 'auto'}}>Delete</button>
                         </div>
                     </div>
-                ))}
+                )) : <p>No products found or Server Error.</p>}
             </div>
         </div>
     );
@@ -168,7 +177,16 @@ function Profile() {
             setUser(res.data);
             setEditValues({ phone: res.data.phone || '', address: res.data.address || '' });
         });
-        axios.get('https://ecommerce-project-wi9z.onrender.com/orders/'+userId).then(res => setOrders(res.data));
+        
+        // --- SAFE FETCH FOR ORDERS ---
+        axios.get('https://ecommerce-project-wi9z.onrender.com/orders/'+userId).then(res => {
+            if (Array.isArray(res.data)) {
+                setOrders(res.data);
+            } else {
+                console.error("Backend Error (Orders):", res.data);
+                setOrders([]); // Prevent crash
+            }
+        });
     }
 
     const handleLogout = () => { localStorage.clear(); navigate('/login'); }
