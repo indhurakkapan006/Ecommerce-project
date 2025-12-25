@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from './api';
 
 // --- COMPONENTS ---
 
@@ -9,13 +9,10 @@ function Home() {
     const navigate = useNavigate();
     const userId = localStorage.getItem('userId'); 
 
-    useEffect(() => {
-        if (userId === 'undefined') { localStorage.clear(); navigate('/login'); }
-        fetchProducts();
-    }, [userId, navigate]);
-
-    const fetchProducts = () => {
-        axios.get('https://shop-api-lmrj.onrender.com/products')
+    // fetchProducts defined as a function declaration so it can be called inside
+    // the effect without ordering/hoisting lint issues.
+    function fetchProducts() {
+        api.get('/products')
             .then(res => {
                 if (Array.isArray(res.data)) {
                     setProducts(res.data);
@@ -26,22 +23,27 @@ function Home() {
             .catch(err => console.log(err));
     }
 
-    const handleBuy = (price) => {
+    useEffect(() => {
+        if (userId === 'undefined') { localStorage.clear(); navigate('/login'); }
+        fetchProducts();
+    }, [userId, navigate]);
+
+    const handleBuy = (productId, price) => {
         if (!userId) { alert("Please Login to Buy!"); navigate('/login'); return; }
-        axios.post('https://shop-api-lmrj.onrender.com/place-order', { user_id: userId, amount: price })
+        api.post('/place-order', { user_id: userId, amount: price, items: { product_id: productId, user_id: userId } })
         .then(res => {
             if (res.data.Status === "Success") alert("Order Placed Successfully!");
             else alert("Order Failed. Try logging out and registering a new account.");
-        });
+        }).catch(err => { console.error('PLACE ORDER ERROR', err); alert('Order Failed'); });
     };
 
     const handleDelete = (id) => {
         if(window.confirm("Are you sure you want to delete this product?")) {
-            axios.delete('https://shop-api-lmrj.onrender.com/delete-product/'+id)
+            api.delete('/delete-product/'+id)
             .then(res => {
                 if(res.data.Status === "Success") { fetchProducts(); } 
                 else { alert("Error deleting product"); }
-            });
+            }).catch(err => { console.error('DELETE PROD ERROR', err); alert('Error deleting product'); });
         }
     };
 
@@ -61,7 +63,7 @@ function Home() {
                             <p className="price">₹{p.price}</p>
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                            <button className="btn-primary" onClick={() => handleBuy(p.price)}>Buy Now</button>
+                            <button className="btn-primary" onClick={() => handleBuy(p.id, p.price)}>Buy Now</button>
                             <button className="btn-danger" onClick={() => handleDelete(p.id)} style={{width: 'auto'}}>Delete</button>
                         </div>
                     </div>
@@ -77,11 +79,11 @@ function AddProduct() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('https://shop-api-lmrj.onrender.com/add-product', values)
+        api.post('/add-product', values)
             .then(res => {
                 if(res.data.Status === "Success") { alert("Product Added!"); navigate('/'); } 
                 else { alert("Error adding product"); }
-            });
+            }).catch(err => { console.error('ADD PROD ERROR', err); alert('Error adding product'); });
     }
 
     return (
@@ -106,8 +108,8 @@ function Register() {
 
     const handleRegister = (e) => {
         e.preventDefault();
-        axios.post('https://shop-api-lmrj.onrender.com/register', values)
-            .then(res => { alert("Registered! Please Login."); navigate('/login'); });
+        api.post('/register', values)
+            .then(() => { alert("Registered! Please Login."); navigate('/login'); }).catch(err => { console.error('REGISTER ERROR', err); alert('Registration failed'); });
     };
 
     return (
@@ -132,13 +134,13 @@ function Login() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('https://shop-api-lmrj.onrender.com/login', values)
+        api.post('/login', values)
             .then(res => {
                 if(res.data.Status === "Success") {
                     localStorage.setItem('userId', res.data.id || res.data.userId); 
                     navigate('/'); 
                 } else { alert("Login Failed"); }
-            });
+            }).catch(err => { console.error('LOGIN ERROR', err); alert('Login failed'); });
     }
 
     return (
@@ -164,34 +166,34 @@ function Profile() {
     const navigate = useNavigate();
     const userId = localStorage.getItem('userId');
 
-    useEffect(() => {
-        if(!userId || userId === 'undefined') navigate('/login');
-        else fetchData();
-    }, []);
-
-    const fetchData = () => {
-        axios.get('https://shop-api-lmrj.onrender.com/user/'+userId).then(res => {
+    const fetchData = useCallback(() => {
+        api.get('/user/'+userId).then(res => {
             setUser(res.data);
             setEditValues({ phone: res.data.phone || '', address: res.data.address || '' });
-        });
+        }).catch(err => { console.error('GET USER ERROR', err); });
         
-        axios.get('https://shop-api-lmrj.onrender.com/orders/'+userId).then(res => {
+        api.get('/orders/'+userId).then(res => {
             if (Array.isArray(res.data)) {
                 setOrders(res.data);
             } else {
                 setOrders([]); 
             }
-        });
-    }
+        }).catch(err => { console.error('GET ORDERS ERROR', err); setOrders([]); });
+    }, [userId]);
+
+    useEffect(() => {
+        if(!userId || userId === 'undefined') navigate('/login');
+        else fetchData();
+    }, [fetchData, navigate, userId]);
 
     const handleLogout = () => { localStorage.clear(); navigate('/login'); }
 
     const handleSave = () => {
-        axios.put('https://shop-api-lmrj.onrender.com/update-profile', { id: userId, phone: editValues.phone, address: editValues.address })
+        api.put('/update-profile', { id: userId, phone: editValues.phone, address: editValues.address })
         .then(res => {
             if(res.data.Status === "Success") { alert("Profile Updated!"); setIsEditing(false); fetchData(); } 
             else alert("Update Failed");
-        });
+        }).catch(err => { console.error('UPDATE PROFILE ERROR', err); alert('Update Failed'); });
     }
 
     return (
@@ -231,7 +233,7 @@ function Profile() {
                         {orders.map(o => (
                             <li key={o.id} style={{background:'#f9fafb', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between'}}>
                                 <span>Order <strong>#{o.id}</strong></span>
-                                <span style={{color:'green', fontWeight:'bold'}}>₹{o.total_amount}</span>
+                                <span style={{color:'green', fontWeight:'bold'}}>₹{o.total_price || o.total_amount || o.totalPrice}</span>
                             </li>
                         ))}
                     </ul>
