@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ecommerce-backend
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "npm run start"
+    workingDirectory: backend
+    envVars: []
+
+staticSites:
+  - name: ecommerce-frontend
+    repo: null
+    buildCommand: "npm install && npm run build"
+    publishPath: frontend/dist
+    workingDirectory: .
+    envVars: []
