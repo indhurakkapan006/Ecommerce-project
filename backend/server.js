@@ -25,9 +25,9 @@ db.connect(err => {
 
 // 1. REGISTER
 app.post('/register', (req, res) => {
-    const sql = "INSERT INTO users (username, email, password) VALUES (?)";
+    const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
     const values = [req.body.username, req.body.email, req.body.password];
-    db.query(sql, [values], (err, result) => {
+    db.query(sql, values, (err, result) => {
         if (err) {
             console.error('REGISTER DB ERROR:', err);
             return res.status(500).json({ Error: "Error" });
@@ -85,9 +85,9 @@ app.get('/products', (req, res) => {
 
 // 5. ADD PRODUCT (Admin)
 app.post('/add-product', (req, res) => {
-    const sql = "INSERT INTO products (name, description, price, image_url) VALUES (?)";
+    const sql = "INSERT INTO products (name, description, price, image_url) VALUES (?, ?, ?, ?)";
     const values = [req.body.name, req.body.description, req.body.price, req.body.image_url];
-    db.query(sql, [values], (err, data) => {
+    db.query(sql, values, (err, data) => {
         if(err) {
             console.error('ADD-PRODUCT DB ERROR:', err);
             return res.status(500).json({ Error: 'Database error' });
