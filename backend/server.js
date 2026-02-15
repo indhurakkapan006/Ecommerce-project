@@ -25,14 +25,31 @@ db.connect(err => {
 
 // 1. REGISTER
 app.post('/register', (req, res) => {
-    const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-    const values = [req.body.username, req.body.email, req.body.password];
-    db.query(sql, values, (err, result) => {
+    const { username, email, password } = req.body;
+    
+    // Check if email already exists
+    const checkSql = "SELECT * FROM users WHERE email = ?";
+    db.query(checkSql, [email], (err, data) => {
         if (err) {
-            console.error('REGISTER DB ERROR:', err);
+            console.error('REGISTER CHECK DB ERROR:', err);
             return res.status(500).json({ Error: "Error" });
         }
-        return res.json({ Status: "Success" });
+        
+        // If email already exists, return error
+        if (data && data.length > 0) {
+            return res.status(400).json({ Error: "Email already registered" });
+        }
+        
+        // Proceed with insertion if email is unique
+        const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+        const values = [username, email, password];
+        db.query(sql, values, (err, result) => {
+            if (err) {
+                console.error('REGISTER DB ERROR:', err);
+                return res.status(500).json({ Error: "Error" });
+            }
+            return res.json({ Status: "Success" });
+        });
     });
 });
 

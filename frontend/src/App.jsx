@@ -10,6 +10,7 @@ import CartPage from './CartPage';
 function Home() {
     const [products, setProducts] = useState([]);
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+    const [quantityModal, setQuantityModal] = useState({ isOpen: false, product: null, quantity: 1 });
     const { addToCart } = useCart();
     const navigate = useNavigate();
     const userId = localStorage.getItem('userId');
@@ -34,7 +35,7 @@ function Home() {
         fetchProducts();
     }, [userId, navigate]);
 
-    const handleBuy = (productId, price) => {
+    const handleBuy = (productId) => {
         if (!userId) { 
             setModal({ isOpen: true, title: 'Login Required', message: 'Please Login to Buy!', type: 'info' });
             setTimeout(() => navigate('/login'), 2000);
@@ -42,13 +43,82 @@ function Home() {
         }
         const product = products.find(p => p.id === productId);
         if (product) {
-            addToCart(product);
-            setModal({ isOpen: true, title: 'Added to Cart', message: `${product.name} added to cart!`, type: 'success' });
+            setQuantityModal({ isOpen: true, product, quantity: 1 });
+        }
+    };
+
+    const handleConfirmAdd = () => {
+        if (quantityModal.product && quantityModal.quantity > 0) {
+            const updatedProduct = { ...quantityModal.product };
+            let totalQty = 0;
+            for (let i = 0; i < quantityModal.quantity; i++) {
+                totalQty = addToCart(updatedProduct);
+            }
+            setModal({ isOpen: true, title: 'Added to Cart', message: `${quantityModal.product.name} added! Quantity in cart: ${totalQty}`, type: 'success' });
+            setQuantityModal({ isOpen: false, product: null, quantity: 1 });
         }
     };
 
     const handleDelete = (id) => {
         if(window.confirm("Are you sure you want to delete this product?")) {
+            
+            {/* Quantity Confirmation Modal */}
+            {quantityModal.isOpen && quantityModal.product && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '12px',
+                        padding: '30px',
+                        maxWidth: '400px',
+                        width: '90%',
+                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)'
+                    }}>
+                        <h2 style={{ marginTop: 0, marginBottom: '15px' }}>Confirm Quantity</h2>
+                        <p style={{ color: '#555', marginBottom: '20px' }}>
+                            <strong>{quantityModal.product.name}</strong><br/>
+                            Price: ₹{quantityModal.product.price}
+                        </p>
+                        <div style={{ marginBottom: '25px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Quantity:</label>
+                            <input 
+                                type="number" 
+                                min="1" 
+                                value={quantityModal.quantity}
+                                onChange={(e) => setQuantityModal({ ...quantityModal, quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+                                style={{ width: '100%', padding: '8px', fontSize: '16px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button 
+                                onClick={handleConfirmAdd}
+                                className="btn-success"
+                                style={{ flex: 1 }}
+                            >
+                                Add to Cart
+                            </button>
+                            <button 
+                                onClick={() => setQuantityModal({ isOpen: false, product: null, quantity: 1 })}
+                                className="btn-danger"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             api.delete('/delete-product/'+id)
             .then(res => {
                 if(res.data.Status === "Success") { fetchProducts(); } 
@@ -126,10 +196,14 @@ function Register() {
     const handleRegister = (e) => {
         e.preventDefault();
         api.post('/register', values)
-            .then(() => { 
+            .then(res => { 
                 setModal({ isOpen: true, title: 'Success', message: 'Registered! Please Login.', type: 'success' });
                 setTimeout(() => navigate('/login'), 2000);
-            }).catch(err => { console.error('REGISTER ERROR', err); setModal({ isOpen: true, title: 'Error', message: 'Registration failed', type: 'error' }); });
+            }).catch(err => { 
+                console.error('REGISTER ERROR', err);
+                const errorMessage = err.response?.data?.Error || 'Registration failed';
+                setModal({ isOpen: true, title: 'Error', message: errorMessage, type: 'error' }); 
+            });
     };
 
     return (
@@ -252,7 +326,7 @@ function Profile() {
                 ) : (
                     <div>
                         {/* FIXED: Added name, id, and autocomplete for Profile fields */}
-                        <input type="tel" name="phone" id="phone" autoComplete="tel" placeholder="Phone" value={editValues.phone} onChange={e => setEditValues({...editValues, phone: e.target.value})} />
+                        <input type="tel" name="phone" id="phone" autoComplete="tel" placeholder="Phone" value={editValues.phone} onChange={e => setEditValues({...editValues, phone: e.target.value.replace(/[^0-9]/g, '')})} />
                         <textarea name="address" id="address" autoComplete="street-address" placeholder="Address" value={editValues.address} onChange={e => setEditValues({...editValues, address: e.target.value})} />
                         <div style={{display:'flex', gap:'10px'}}>
                             <button onClick={handleSave} className="btn-success" style={{width:'auto'}}>Save Changes</button>
@@ -264,14 +338,50 @@ function Profile() {
                 <hr style={{margin:'30px 0', borderTop:'1px solid #eee'}} />
                 <h3>Order History</h3>
                 {orders.length === 0 ? <p style={{color:'#888'}}>No orders yet.</p> : (
-                    <ul style={{listStyle:'none', padding:0}}>
-                        {orders.map(o => (
-                            <li key={o.id} style={{background:'#f9fafb', padding:'15px', marginBottom:'10px', borderRadius:'8px', display:'flex', justifyContent:'space-between'}}>
-                                <span>Order <strong>#{o.id}</strong></span>
-                                <span style={{color:'green', fontWeight:'bold'}}>₹{o.total_price || o.total_amount || o.totalPrice}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <div>
+                        {orders.map(o => {
+                            let items = [];
+                            try {
+                                items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+                                // If items is an object with user_id only, convert to empty array
+                                if (!Array.isArray(items)) {
+                                    items = Object.values(items).filter(item => item && typeof item === 'object' && item.id);
+                                }
+                            } catch (e) {
+                                items = [];
+                            }
+                            
+                            return (
+                                <div key={o.id} style={{background:'#f9fafb', padding:'15px', marginBottom:'15px', borderRadius:'8px', border:'1px solid #e0e0e0'}}>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
+                                        <span style={{fontWeight:'bold', fontSize:'1.1rem'}}>Order #{o.id}</span>
+                                        <span style={{color:'green', fontWeight:'bold', fontSize:'1.05rem'}}>₹{o.total_price || o.total_amount || o.totalPrice}</span>
+                                    </div>
+                                    <div style={{fontSize:'0.9rem', color:'#666', marginBottom:'10px'}}>
+                                        {new Date(o.created_at).toLocaleDateString('en-IN') || 'Date unavailable'}
+                                    </div>
+                                    <div style={{background:'white', padding:'10px', borderRadius:'6px', marginTop:'10px'}}>
+                                        {items.length > 0 ? (
+                                            <div>
+                                                <p style={{marginTop:'0', marginBottom:'8px', fontSize:'0.9rem', fontWeight:'500', color:'#333'}}>Items:</p>
+                                                {items.map((item, idx) => (
+                                                    <div key={idx} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom: idx < items.length - 1 ? '1px solid #eee' : 'none', fontSize:'0.9rem'}}>
+                                                        <div>
+                                                            <span style={{fontWeight:'500'}}>{item.name}</span>
+                                                            <span style={{color:'#888', marginLeft:'10px'}}>x{item.quantity}</span>
+                                                        </div>
+                                                        <span style={{color:'#666'}}>₹{(item.price * item.quantity).toFixed(2)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p style={{margin:'0', color:'#888', fontSize:'0.9rem'}}>No product details available</p>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         </div>
