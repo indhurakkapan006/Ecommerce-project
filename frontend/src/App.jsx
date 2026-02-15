@@ -62,6 +62,17 @@ function Home() {
     const handleDelete = (id) => {
         if(window.confirm("Are you sure you want to delete this product?")) {
             
+            api.delete('/delete-product/'+id)
+            .then(res => {
+                if(res.data.Status === "Success") { fetchProducts(); } 
+                else { setModal({ isOpen: true, title: 'Error', message: 'Error deleting product', type: 'error' }); }
+            }).catch(err => { console.error('DELETE PROD ERROR', err); setModal({ isOpen: true, title: 'Error', message: 'Error deleting product', type: 'error' }); });
+        }
+    };
+
+    return (
+        <div className="container">
+            <Modal isOpen={modal.isOpen} title={modal.title} message={modal.message} type={modal.type} onClose={() => setModal({ ...modal, isOpen: false })} />
             {/* Quantity Confirmation Modal */}
             {quantityModal.isOpen && quantityModal.product && (
                 <div style={{
@@ -118,18 +129,6 @@ function Home() {
                     </div>
                 </div>
             )}
-
-            api.delete('/delete-product/'+id)
-            .then(res => {
-                if(res.data.Status === "Success") { fetchProducts(); } 
-                else { setModal({ isOpen: true, title: 'Error', message: 'Error deleting product', type: 'error' }); }
-            }).catch(err => { console.error('DELETE PROD ERROR', err); setModal({ isOpen: true, title: 'Error', message: 'Error deleting product', type: 'error' }); });
-        }
-    };
-
-    return (
-        <div className="container">
-            <Modal isOpen={modal.isOpen} title={modal.title} message={modal.message} type={modal.type} onClose={() => setModal({ ...modal, isOpen: false })} />
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'30px'}}>
                 <h1>Latest Products</h1>
                 {isAdmin && <Link to="/add-product" className="btn-success" style={{textDecoration:'none', padding:'10px 20px', borderRadius:'8px'}}>+ Add New</Link>}
@@ -144,7 +143,7 @@ function Home() {
                             <p className="price">₹{p.price}</p>
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                            <button className="btn-primary" onClick={() => handleBuy(p.id, p.price)}>Buy Now</button>
+                            <button className="btn-primary" onClick={() => handleBuy(p.id)}>Buy Now</button>
                             {isAdmin && <button className="btn-danger" onClick={() => handleDelete(p.id)} style={{width: 'auto'}}>Delete</button>}
                         </div>
                     </div>
